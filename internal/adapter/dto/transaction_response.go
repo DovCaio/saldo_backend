@@ -12,11 +12,11 @@ const (
 )
 
 type TransactionResponse struct {
-	ID          string
-	Date        time.Time
-	Description string
-	AmountCents int64
-	Type        TransactionTypeResponse
+	ID          string `json:"id"`
+	Date        time.Time `json:"date"`
+	Description string `json:"description"`
+	AmountCents int64 `json:"amount_cents"`
+	Type        TransactionTypeResponse `json:"type"`
 }
 
 func NewTransactionResponse(id string, date time.Time, description string, amountCents int64, type_ string) (*TransactionResponse, error) {

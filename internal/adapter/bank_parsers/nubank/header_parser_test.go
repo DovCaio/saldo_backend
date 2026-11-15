@@ -22,6 +22,70 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 				"external_id": 3,
 			},
 		},
+		{
+			name:   "supports Nubank header with date in the second column",
+			header: []string{ "Descrição", "Data", "Valor", "Identificador"},
+			expectedColumns: map[string]int{
+				"date":        1,
+				"description": 0,
+				"amount":      2,
+				"external_id": 3,
+			},
+		},
+		{
+			name:   "supports Nubank header date in the third column",
+			header: []string{ "Descrição", "Valor", "Data", "Identificador"},
+			expectedColumns: map[string]int{
+				"date":        2,
+				"description": 0,
+				"amount":      1,
+				"external_id": 3,
+			},
+		},
+		{
+			name:   "supports Nubank header date in the forth column",
+			header: []string{ "Descrição", "Valor", "Identificador", "Data"},
+			expectedColumns: map[string]int{
+				"date":        3,
+				"description": 0,
+				"amount":      1,
+				"external_id": 2,
+			},
+		},
+
+		{
+			name:   "supports Nubank header description in the third column",
+			header: []string{ "Valor", "Identificador", "Descrição", "Data"},
+			expectedColumns: map[string]int{
+				"date":        3,
+				"description": 2,
+				"amount":      0,
+				"external_id": 1,
+			},
+		},
+
+		{
+			name:   "supports Nubank header description in the forth column",
+			header: []string{ "Valor", "Identificador", "Data", "Descrição"},
+			expectedColumns: map[string]int{
+				"date":        2,
+				"description": 3,
+				"amount":      0,
+				"external_id": 1,
+			},
+		},
+
+		{
+			name:   "supports Nubank header amount in the forth column",
+			header: []string{  "Identificador", "Data", "Descrição", "Valor"},
+			expectedColumns: map[string]int{
+				"date":        1,
+				"description": 2,
+				"amount":      3,
+				"external_id": 0,
+			},
+		},
+		
 	}
 
 	for _, tc := range testCases {

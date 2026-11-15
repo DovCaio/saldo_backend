@@ -25,8 +25,6 @@ func NewNubankParserIMPL(header *[]string) (*NubankParserIMPL, error) {
     }, nil
 }
 
-
-
 func (p *NubankParserIMPL) Supports() bool {
     expected := map[string]bool{
         "date":        true,
