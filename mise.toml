@@ -14,7 +14,12 @@ run = "until docker compose exec -T postgres_test pg_isready -U saldo_test -d sa
 
 [tasks.test-db-migrate]
 depends = ["test-db-wait"]
-run = "docker compose exec -T postgres_test psql -v ON_ERROR_STOP=1 -U saldo_test -d saldo_test < migrations/001_create_transactions.sql"
+
+run = """
+docker compose exec -T postgres_test psql -v ON_ERROR_STOP=1 -U saldo_test -d saldo_test < migrations/001_create_transactions.sql &&
+docker compose exec -T postgres_test psql -v ON_ERROR_STOP=1 -U saldo_test -d saldo_test < migrations/002_add_external_id_constraint.sql &&
+docker compose exec -T postgres_test psql -v ON_ERROR_STOP=1 -U saldo_test -d saldo_test < migrations/003_add_category_and_status_column.sql
+"""
 
 [tasks.test-integration]
 depends = ["test-db-up", "test-db-migrate"]
