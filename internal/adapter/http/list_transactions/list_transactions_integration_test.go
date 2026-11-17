@@ -67,7 +67,6 @@ func TestListTransactionsIntegration_FiltersAndReturnsTransactions(
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	description := "integration-list-" + suffix
 
-	// Um valor específico ajuda a isolar o registro deste teste.
 	amount := int64(100_000_000 + time.Now().UnixNano()%1_000_000_000)
 	date := "2020-01-02"
 

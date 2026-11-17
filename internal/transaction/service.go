@@ -47,15 +47,16 @@ func (s *Service) ImportTransactions(
 }
 
 func (s *Service) FindAll(ctx context.Context, filter TransactionFilter) ([]dto.TransactionResponse, error){
-
+    //reach here
     response, err := s.repository.FindAll(ctx, filter)
     if err != nil {
         return nil, err
     }
 
     result := make([]dto.TransactionResponse, 0, len(response))
-
+    
     for _, value := range response {
+        
         res, err := dto.NewTransactionResponse(value.ID, value.Date, value.Description, value.AmountCents, string(value.Type))
         if err != nil {
             return nil, err

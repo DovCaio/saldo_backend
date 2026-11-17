@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"github.com/DovCaio/saldo/internal/adapter/http/middleware"
 	summary_transaction_handler_adapter "github.com/DovCaio/saldo/internal/adapter/http/summary"
 	"github.com/DovCaio/saldo/internal/adapter/postgres"
+	"github.com/DovCaio/saldo/internal/adapter/rabbitmq"
 	import_transaction "github.com/DovCaio/saldo/internal/application/import_transaction"
 	list_transactions "github.com/DovCaio/saldo/internal/application/list_transactions"
 	summary_transactions "github.com/DovCaio/saldo/internal/application/summary_transactions"
@@ -24,6 +26,19 @@ import (
 )
 
 func main() {
+
+
+	url := os.Getenv("RABBITMQ_URL")
+
+	connection, err := rabbitmq.NewConnection(url)
+	if err != nil {
+		fmt.Println("application wasnt able to connect to the rabbitmq")
+		log.Fatal(err)
+	}
+
+	defer connection.Close()
+
+	log.Println("connection with rabbitmq was sucessful")
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {

@@ -1,0 +1,8 @@
+package rabbitmq
+
+
+
+func main(){
+	
+
+}
