@@ -38,6 +38,11 @@ func main() {
 
 	defer connection.Close()
 
+	publisher, err := rabbitmq.NewPublisher(connection.Channel())
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	log.Println("connection with rabbitmq was sucessful")
 
 	databaseURL := os.Getenv("DATABASE_URL")
