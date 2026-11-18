@@ -20,15 +20,15 @@ type fakeRepository struct {
 func (f *fakeRepository) SaveBatch(
     ctx context.Context,
     tx []Transaction,
-) error {
+) ([]Transaction, error) {
     if f.err != nil {
-        return f.err
+        return nil, f.err
     }
 
 	f.called = true
 
     f.saved = append(f.saved, tx...)
-    return nil
+    return []Transaction{}, nil
 }
 
 func (f *fakeRepository) FindAll(
@@ -67,7 +67,7 @@ func TestServiceRegister(t *testing.T) {
         t.Fatal(err)
     }
 
-    err = service.Register(context.Background(), tx)
+    _, err = service.Register(context.Background(), tx)
     if err != nil {
         t.Fatalf("Register() error = %v", err)
     }
@@ -102,7 +102,7 @@ func TestServiceRegisterReturnsRepositoryError(t *testing.T) {
         t.Fatal(err)
     }
 
-    err = service.Register(context.Background(), tx)
+    _, err = service.Register(context.Background(), tx)
 
     if !errors.Is(err, expectedErr) {
         t.Fatalf("error = %v, want %v", err, expectedErr)
@@ -163,7 +163,7 @@ func TestImportTransactions(t *testing.T) {
 			}
 			service := NewService(repo)
 
-			err := service.ImportTransactions(
+			_, err := service.ImportTransactions(
 				context.Background(),
 				tt.transactions,
 			)

@@ -41,15 +41,15 @@ type fakeRepository struct {
 func (f *fakeRepository) SaveBatch(
 	ctx context.Context,
 	transactions []transaction.Transaction,
-) error {
+) ([]transaction.Transaction, error) {
 	f.calls++
 
 	if f.err != nil {
-		return f.err
+		return nil, f.err
 	}
 
 	f.saved = append(f.saved, transactions...)
-	return nil
+	return []transaction.Transaction{}, nil
 }
 
 func (f *fakeRepository) FindAll(
@@ -135,7 +135,7 @@ func TestImportTransactionsExecute(t *testing.T) {
 			}
 
 			service := transaction.NewService(repo)
-			useCase := NewImportTransactions(parser, service)
+			useCase := NewImportTransactions(parser, service, nil) //Gonnna result an erro, problaby
 			err := useCase.Execute(
 				context.Background(),
 				strings.NewReader(tt.input),

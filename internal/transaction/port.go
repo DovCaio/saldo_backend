@@ -21,7 +21,7 @@ type Repository interface {
     SaveBatch(
         ctx context.Context,
         transactions []Transaction,
-    ) error
+    ) ([]Transaction, error)
 
     FindAll(
         ctx context.Context,

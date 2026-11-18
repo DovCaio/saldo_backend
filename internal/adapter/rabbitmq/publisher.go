@@ -7,8 +7,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/DovCaio/saldo/internal/application"
+	"github.com/DovCaio/saldo/internal/transaction"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
+
+var _ application.MessagingPublisher = (*Publisher)(nil)
 
 const (
 	requestQueue = "transactions.classification.requested"
@@ -16,13 +20,6 @@ const (
 	deadExchange = "transactions.dlx"
 	deadRouting  = "classification.dead"
 )
-
-type ClassificationRequest struct {
-	TransactionID     string `json:"transaction_id"`
-	EventID           string `json:"event_id"`
-	Description       string `json:"description"`
-	DescriptionVersion int64 `json:"description_version"`
-}
 
 type Publisher struct {
 	channel  *amqp.Channel
@@ -99,16 +96,14 @@ func (p *Publisher) declareTopology() error {
 
 func (p *Publisher) Publish(
 	ctx context.Context,
-	request ClassificationRequest,
+	transaction transaction.Transaction,
 ) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if request.TransactionID == "" ||
-		request.EventID == "" ||
-		request.Description == "" ||
-		request.DescriptionVersion < 1 {
-		return fmt.Errorf("invalid classification request")
+	request, err := FromTransaction(transaction)
+	if err != nil {
+		return err
 	}
 
 	body, err := json.Marshal(request)

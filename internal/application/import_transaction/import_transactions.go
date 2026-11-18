@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/DovCaio/saldo/internal/adapter/bank_parsers/nubank"
+	"github.com/DovCaio/saldo/internal/application"
 	"github.com/DovCaio/saldo/internal/transaction"
 )
 
@@ -22,6 +23,7 @@ type TransactionParser interface {
 type ImportTransactions struct {
 	parser  TransactionParser
 	service *transaction.Service
+	publisher application.MessagingPublisher
 }
 
 type BankParser interface {
@@ -33,10 +35,12 @@ type BankParser interface {
 func NewImportTransactions(
 	parser TransactionParser,
 	service *transaction.Service,
+	publisher application.MessagingPublisher,
 ) *ImportTransactions {
 	return &ImportTransactions{
 		parser:  parser,
 		service: service,
+		publisher: publisher,
 	}
 }
 
@@ -68,7 +72,7 @@ func (uc *ImportTransactions) Execute(
 	var rigthBankParser BankParser
 
 	for i := range bankParsers {
-		if bankParsers[i].Supports(){ //Isso ta sendo null de vez enquanto
+		if bankParsers[i].Supports(){
 			rigthBankParser = bankParsers[i]
 			break
 		}
@@ -84,5 +88,29 @@ func (uc *ImportTransactions) Execute(
 	}
 
 
-	return uc.service.ImportTransactions(ctx, transactions)
+	savedTransaction, err := uc.service.ImportTransactions(ctx, transactions)
+	if err != nil {
+		return err
+	}
+
+	uc.sendToMessaging(ctx, savedTransaction)
+
+	return nil
+}
+
+func (uc *ImportTransactions) sendToMessaging(
+    ctx context.Context,
+    transactions []transaction.Transaction,
+) error {
+    for _, tx := range transactions {
+        if err := uc.publisher.Publish(ctx, tx); err != nil {
+            return fmt.Errorf(
+                "publishing classification request for transaction %s: %w",
+                tx.ID,
+                err,
+            )
+        }
+    }
+
+    return nil
 }

@@ -77,6 +77,7 @@ func main() {
 	importTransactions := import_transaction.NewImportTransactions(
 		parser,
 		service,
+		publisher,
 	)
 
 	listTransactions := list_transactions.NewFindAllTransaction(

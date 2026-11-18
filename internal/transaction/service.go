@@ -11,7 +11,7 @@ type ServiceTransaction interface {
     ImportTransactions(
     ctx context.Context,
     transactions []Transaction,
-    ) error 
+    ) ([]Transaction, error )
 
     FindAll(ctx context.Context, filter TransactionFilter) ([]dto.TransactionResponse, error)
 
@@ -31,16 +31,16 @@ func NewService(repository Repository) *Service {
 func (s *Service) Register(
     ctx context.Context,
     tx Transaction,
-) error {
+) ([] Transaction, error) {
     return s.repository.SaveBatch(ctx, []Transaction{tx})
 }
 
 func (s *Service) ImportTransactions(
     ctx context.Context,
     transactions []Transaction,
-) error {
+) ([] Transaction, error) {
     if len(transactions) == 0 {
-        return ErrEmptyImport
+        return nil, ErrEmptyImport
     }
 
     return s.repository.SaveBatch(ctx, transactions)

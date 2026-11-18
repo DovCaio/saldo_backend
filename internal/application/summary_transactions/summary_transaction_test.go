@@ -18,8 +18,8 @@ type transactionSummaryMock struct {
 	result     *dto.SummaryResponse
 }
 
-func (m *transactionSummaryMock) ImportTransactions(ctx context.Context, transactions []transaction.Transaction) error {
-	return nil
+func (m *transactionSummaryMock) ImportTransactions(ctx context.Context, transactions []transaction.Transaction) ([]transaction.Transaction, error) {
+	return nil, nil
 }
 
 

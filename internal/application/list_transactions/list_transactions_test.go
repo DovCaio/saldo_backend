@@ -20,8 +20,8 @@ type transactionFinderMock struct {
 	called     bool
 }
 
-func (m *transactionFinderMock) ImportTransactions(ctx context.Context, transactions []transaction.Transaction) error {
-	return nil
+func (m *transactionFinderMock) ImportTransactions(ctx context.Context, transactions []transaction.Transaction) ([]transaction.Transaction, error) {
+	return nil, nil
 }
 
 func (m *transactionFinderMock) FindAll(

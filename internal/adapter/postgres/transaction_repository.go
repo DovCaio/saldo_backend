@@ -26,14 +26,14 @@ var _ transaction.Repository = (*TransactionRepository)(nil)
 func (r *TransactionRepository) SaveBatch(
     ctx context.Context,
     transactions []transaction.Transaction,
-) error {
+) ([]transaction.Transaction, error) {
     if len(transactions) == 0 {
-        return transaction.ErrEmptyImport
+        return nil, transaction.ErrEmptyImport
     }
 
     tx, err := r.db.BeginTx(ctx, nil)
     if err != nil {
-        return fmt.Errorf("beginning transaction batch: %w", err)
+        return nil, fmt.Errorf("beginning transaction batch: %w", err)
     }
     defer tx.Rollback()
 
@@ -48,8 +48,12 @@ func (r *TransactionRepository) SaveBatch(
         VALUES ($1, $2, $3, $4, NULLIF($5, ''))
     `
 
+    saved := make([]transaction.Transaction, 0, len(transactions))
+
     for i, item := range transactions {
-        _, err := tx.ExecContext(
+        var t transaction.Transaction
+
+        err := tx.QueryRowContext(
             ctx,
             query,
             item.Date.Format("2006-01-02"),
@@ -57,21 +61,31 @@ func (r *TransactionRepository) SaveBatch(
             item.AmountCents,
             string(item.Type),
             item.ExternalID,
+        ).Scan(
+            &t.ID,
+            &t.Date,
+            &t.Description,
+            &t.AmountCents,
+            &t.Type,
+            &t.ExternalID,
         )
+
         if err != nil {
-            return fmt.Errorf(
+            return nil, fmt.Errorf(
                 "saving transaction %d: %w",
                 i+1,
                 err,
             )
         }
+
+        saved = append(saved, t)
     }
 
     if err := tx.Commit(); err != nil {
-        return fmt.Errorf("committing transaction batch: %w", err)
+        return nil, fmt.Errorf("committing transaction batch: %w", err)
     }
 
-    return nil
+    return transactions ,nil
 }
 
 
