@@ -27,10 +27,9 @@ import (
 
 func main() {
 
+	rabbitURL := os.Getenv("RABBITMQ_URL")
 
-	url := os.Getenv("RABBITMQ_URL")
-
-	connection, err := rabbitmq.NewConnection(url)
+	connection, err := rabbitmq.NewConnection(rabbitURL)
 	if err != nil {
 		fmt.Println("application wasnt able to connect to the rabbitmq")
 		log.Fatal(err)

@@ -46,6 +46,13 @@ func (r *TransactionRepository) SaveBatch(
             external_id
         )
         VALUES ($1, $2, $3, $4, NULLIF($5, ''))
+        RETURNING
+            id,
+            transaction_date,
+            description,
+            amount_cents,
+            type,
+            external_id
     `
 
     saved := make([]transaction.Transaction, 0, len(transactions))
