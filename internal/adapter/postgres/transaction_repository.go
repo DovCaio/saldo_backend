@@ -349,11 +349,47 @@ func (r *TransactionRepository) Summary(
 }
 
 func (r *TransactionRepository) UpdateClassification(
-        ctx context.Context,
-        transactionID string,
-        category string,
-        confidence float64,
-        descriptionVersion int64,
-    ) error {
-        return  nil
+    ctx context.Context,
+    transactionID string,
+    category string,
+    confidence float64,
+    descriptionVersion int64,
+) error {
+    query := `
+        UPDATE transactions
+        SET category = $1,
+            category_status = $2
+        WHERE id = $3
+    `
+
+    result, err := r.db.ExecContext(
+        ctx,
+        query,
+        category,
+        "completed",
+        transactionID,
+    )
+    if err != nil {
+        return fmt.Errorf(
+            "updating transaction classification: %w",
+            err,
+        )
+    }
+
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return fmt.Errorf(
+            "getting affected rows: %w",
+            err,
+        )
+    }
+
+    if rowsAffected == 0 {
+        return fmt.Errorf(
+            "transaction %s not found",
+            transactionID,
+        )
+    }
+
+    return nil
 }
