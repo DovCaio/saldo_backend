@@ -94,7 +94,7 @@ func (r *TransactionRepository) SaveBatch(
         return nil, fmt.Errorf("committing transaction batch: %w", err)
     }
 
-    return transactions ,nil
+    return saved ,nil
 }
 
 
@@ -389,7 +389,7 @@ func (r *TransactionRepository) UpdateClassification(
             "transaction %s not found",
             transactionID,
         )
-    }
+    }  
 
     return nil
 }

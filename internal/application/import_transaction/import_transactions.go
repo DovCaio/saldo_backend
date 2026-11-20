@@ -93,7 +93,10 @@ func (uc *ImportTransactions) Execute(
 		return err
 	}
 
-	uc.sendToMessaging(ctx, savedTransaction)
+	err = uc.sendToMessaging(ctx, savedTransaction)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

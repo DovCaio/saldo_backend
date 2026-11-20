@@ -36,16 +36,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-
-
 	defer producerConnection.Close()
 
 	publisher, err := rabbitmq.NewPublisher(producerConnection.Channel())
 	if err != nil {
 		log.Fatal(err)
 	}
-
-
 
 	log.Println("connection with rabbitmq was sucessful")
 
@@ -70,7 +66,6 @@ func main() {
 		log.Fatalf("connecting to PostgreSQL: %v", err)
 	}
 	
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", health_adapter.NewHealthHandler())
 
@@ -107,6 +102,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	ctx, cancel = context.WithCancel(context.Background())
+	defer cancel()
 
 	go func() {
     if err := consumer.Consume(ctx); err != nil {
