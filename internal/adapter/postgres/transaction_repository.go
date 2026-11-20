@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/DovCaio/saldo/internal/adapter/dto"
+	"github.com/DovCaio/saldo/internal/application"
 	"github.com/DovCaio/saldo/internal/transaction"
 )
 
@@ -22,6 +23,7 @@ func NewTransactionRepository(db *sql.DB) *TransactionRepository {
 }
 
 var _ transaction.Repository = (*TransactionRepository)(nil)
+var _ application.ClassificationRepository = (*TransactionRepository)(nil)
 
 func (r *TransactionRepository) SaveBatch(
     ctx context.Context,
@@ -344,4 +346,14 @@ func (r *TransactionRepository) Summary(
     response.Balance = response.TotalIncome - response.TotalExpense
 
     return response, nil
+}
+
+func (r *TransactionRepository) UpdateClassification(
+        ctx context.Context,
+        transactionID string,
+        category string,
+        confidence float64,
+        descriptionVersion int64,
+    ) error {
+        return  nil
 }

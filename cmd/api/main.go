@@ -22,6 +22,7 @@ import (
 	import_transaction "github.com/DovCaio/saldo/internal/application/import_transaction"
 	list_transactions "github.com/DovCaio/saldo/internal/application/list_transactions"
 	summary_transactions "github.com/DovCaio/saldo/internal/application/summary_transactions"
+	"github.com/DovCaio/saldo/internal/application/transaction_classification"
 	"github.com/DovCaio/saldo/internal/transaction"
 )
 
@@ -29,18 +30,22 @@ func main() {
 
 	rabbitURL := os.Getenv("RABBITMQ_URL")
 
-	connection, err := rabbitmq.NewConnection(rabbitURL)
+	producerConnection, err := rabbitmq.NewConnection(rabbitURL)
 	if err != nil {
-		fmt.Println("application wasnt able to connect to the rabbitmq")
+		fmt.Println("application wasnt able to connect to the rabbitmq (producer connection)")
 		log.Fatal(err)
 	}
 
-	defer connection.Close()
 
-	publisher, err := rabbitmq.NewPublisher(connection.Channel())
+
+	defer producerConnection.Close()
+
+	publisher, err := rabbitmq.NewPublisher(producerConnection.Channel())
 	if err != nil {
 		log.Fatal(err)
 	}
+
+
 
 	log.Println("connection with rabbitmq was sucessful")
 
@@ -86,6 +91,28 @@ func main() {
 	summary := summary_transactions.NewSummaryTransactions(
 		service,
 	)
+
+	classfication := transaction_classification.NewClassificationUseCase(
+    	repository,
+	)
+
+	consumerConnection, err := rabbitmq.NewConnection(rabbitURL)
+	if err != nil {
+		fmt.Println("application wasnt able to connect to the rabbitmq (producer connection)")
+		log.Fatal(err)
+	}
+	defer consumerConnection.Close()
+
+	consumer, err := rabbitmq.NewConsumer(consumerConnection.Channel(), classfication.Execute)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+    if err := consumer.Consume(ctx); err != nil {
+        log.Printf("Classification consumer stopped: %v", err)
+    }
+	}()
 
 	importHandler := import_handler_adapter.NewImportHandler(importTransactions)
 	listTransactionsHandler := list_transaction_handler_adapter.NewListTransactionsHandler(listTransactions)

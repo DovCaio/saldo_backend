@@ -26,3 +26,12 @@ func FromTransaction(transaction transaction.Transaction) (*ClassificationReques
 		DescriptionVersion: 0,
 	}, nil
 }
+
+
+type ClassificationResult struct {
+    TransactionID      string  `json:"transaction_id"`
+    EventID           string  `json:"event_id"`
+    Category           string  `json:"category"`
+    Confidence         float64 `json:"confidence"`
+    DescriptionVersion int64   `json:"description_version"`
+}
