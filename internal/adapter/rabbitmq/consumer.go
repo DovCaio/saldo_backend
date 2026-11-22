@@ -12,7 +12,7 @@ import (
 const (
     resultQueue          = "transactions.classification.completed"
     resultDeadQueue     = "transactions.classification.completed.dead"
-    resultDeadExchange  = "transactions.classification.completed.dlx"
+    resultDeadExchange  = "transactions.classification.completed"
     resultDeadRoutingKey = "classification.result.dead"
 )
 
@@ -100,10 +100,7 @@ func (c *Consumer) declareTopology() error {
         false,
         false,
         false,
-        amqp.Table{
-            "x-dead-letter-exchange":     resultDeadExchange,
-            "x-dead-letter-routing-key": resultDeadRoutingKey,
-        },
+        nil,
     )
     if err != nil {
         return fmt.Errorf(

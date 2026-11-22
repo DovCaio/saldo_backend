@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/DovCaio/saldo/internal/transaction"
+	"github.com/google/uuid"
 )
 
 type ClassificationRequest struct {
@@ -21,9 +22,9 @@ func FromTransaction(transaction transaction.Transaction) (*ClassificationReques
 
 	return &ClassificationRequest{
 		TransactionID: transaction.ID,
-		EventID: "",
+		EventID: uuid.New().String(),
 		Description: transaction.Description,
-		DescriptionVersion: 0,
+		DescriptionVersion: 1,
 	}, nil
 }
 
