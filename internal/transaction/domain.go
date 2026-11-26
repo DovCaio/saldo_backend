@@ -14,6 +14,15 @@ const (
 	Expense TransactionType = "EXPENSE"
 )
 
+type CategoryStatus string
+
+const (
+	Pending CategoryStatus = "pending"
+	Completed CategoryStatus = "completed"
+	Failed CategoryStatus = "failed"
+
+)
+
 var (
 	ErrInvalidDate        = errors.New("invalid transaction date")
 	ErrEmptyDescription   = errors.New("description cannot be empty")
@@ -28,6 +37,8 @@ type Transaction struct {
 	AmountCents int64
 	Type        TransactionType
 	ExternalID  string
+	Category    string
+	CategoryStatus CategoryStatus
 }
 
 func NewTransaction(

@@ -57,7 +57,7 @@ func (s *Service) FindAll(ctx context.Context, filter TransactionFilter) ([]dto.
     
     for _, value := range response {
         
-        res, err := dto.NewTransactionResponse(value.ID, value.Date, value.Description, value.AmountCents, string(value.Type))
+        res, err := dto.NewTransactionResponse(value.ID, value.Date, value.Description, value.AmountCents, string(value.Type), value.Category)
         if err != nil {
             return nil, err
         }
