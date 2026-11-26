@@ -22,12 +22,12 @@ const (
 )
 
 type Publisher struct {
-	channel  *amqp.Channel
+	channel  amqpChannel
 	confirms <-chan amqp.Confirmation
 	mu       sync.Mutex
 }
 
-func NewPublisher(channel *amqp.Channel) (*Publisher, error) {
+func NewPublisher(channel amqpChannel) (*Publisher, error) {
 	if err := channel.Confirm(false); err != nil {
 		return nil, fmt.Errorf("enabling publisher confirms: %w", err)
 	}

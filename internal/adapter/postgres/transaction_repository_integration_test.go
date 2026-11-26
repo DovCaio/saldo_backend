@@ -70,7 +70,7 @@ func TestTransactionRepository_SaveBatch_PersistsTransactions(t *testing.T) {
 		ExternalID:  externalID,
 	}
 
-	if err := repository.SaveBatch(ctx, []transaction.Transaction{tx}); err != nil {
+	if _, err := repository.SaveBatch(ctx, []transaction.Transaction{tx}); err != nil {
 		t.Fatalf("SaveBatch() error: %v", err)
 	}
 
@@ -151,7 +151,7 @@ func TestTransactionRepository_SaveBatch_RollsBackOnError(t *testing.T) {
 		},
 	}
 
-	err := repository.SaveBatch(ctx, batch)
+	_, err := repository.SaveBatch(ctx, batch)
 	if err == nil {
 		t.Fatal("SaveBatch() error = nil, want database constraint error")
 	}

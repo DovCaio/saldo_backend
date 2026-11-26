@@ -2,14 +2,11 @@ package nubank
 
 import "testing"
 
-
-
 func TestNubankParserIMPL_Supports(t *testing.T) {
 
-
 	testCases := []struct {
-		name   string
-		header []string
+		name            string
+		header          []string
 		expectedColumns map[string]int
 	}{
 		{
@@ -24,7 +21,7 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 		},
 		{
 			name:   "supports Nubank header with date in the second column",
-			header: []string{ "Descrição", "Data", "Valor", "Identificador"},
+			header: []string{"Descrição", "Data", "Valor", "Identificador"},
 			expectedColumns: map[string]int{
 				"date":        1,
 				"description": 0,
@@ -34,7 +31,7 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 		},
 		{
 			name:   "supports Nubank header date in the third column",
-			header: []string{ "Descrição", "Valor", "Data", "Identificador"},
+			header: []string{"Descrição", "Valor", "Data", "Identificador"},
 			expectedColumns: map[string]int{
 				"date":        2,
 				"description": 0,
@@ -44,7 +41,7 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 		},
 		{
 			name:   "supports Nubank header date in the forth column",
-			header: []string{ "Descrição", "Valor", "Identificador", "Data"},
+			header: []string{"Descrição", "Valor", "Identificador", "Data"},
 			expectedColumns: map[string]int{
 				"date":        3,
 				"description": 0,
@@ -55,7 +52,7 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 
 		{
 			name:   "supports Nubank header description in the third column",
-			header: []string{ "Valor", "Identificador", "Descrição", "Data"},
+			header: []string{"Valor", "Identificador", "Descrição", "Data"},
 			expectedColumns: map[string]int{
 				"date":        3,
 				"description": 2,
@@ -66,7 +63,7 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 
 		{
 			name:   "supports Nubank header description in the forth column",
-			header: []string{ "Valor", "Identificador", "Data", "Descrição"},
+			header: []string{"Valor", "Identificador", "Data", "Descrição"},
 			expectedColumns: map[string]int{
 				"date":        2,
 				"description": 3,
@@ -77,7 +74,7 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 
 		{
 			name:   "supports Nubank header amount in the forth column",
-			header: []string{  "Identificador", "Data", "Descrição", "Valor"},
+			header: []string{"Identificador", "Data", "Descrição", "Valor"},
 			expectedColumns: map[string]int{
 				"date":        1,
 				"description": 2,
@@ -85,7 +82,6 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 				"external_id": 0,
 			},
 		},
-		
 	}
 
 	for _, tc := range testCases {
@@ -113,11 +109,33 @@ func TestNubankParserIMPL_Supports(t *testing.T) {
 
 }
 
+func TestNubankParserIMPL_DoesNotSupportInvalidHeaders(t *testing.T) {
+	tests := []struct {
+		name   string
+		header []string
+	}{
+		{name: "wrong length", header: []string{"Data", "Descrição", "Valor"}},
+		{name: "unknown column", header: []string{"Data", "Descrição", "Valor", "Banco"}},
+		{name: "duplicate column", header: []string{"Data", "Data", "Valor", "Identificador"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parser, err := NewNubankParserIMPL(&tt.header)
+			if err != nil {
+				t.Fatalf("NewNubankParserIMPL() error = %v", err)
+			}
+			if parser.Supports() {
+				t.Fatal("expected Supports() to return false")
+			}
+		})
+	}
+}
 
 func TestNubankParserIMPL_GetColumns(t *testing.T) {
 	testCases := []struct {
-		name   string
-		header []string
+		name            string
+		header          []string
 		expectedColumns map[string]int
 	}{
 		{
@@ -147,6 +165,10 @@ func TestNubankParserIMPL_GetColumns(t *testing.T) {
 				if index, exists := parser.GetColumnIndex(key); !exists || index != expectedIndex {
 					t.Errorf("Expected column '%s' to have index %d, but got %d", key, expectedIndex, index)
 				}
+			}
+
+			if _, exists := parser.GetColumnIndex("missing"); exists {
+				t.Error("expected missing column to be absent")
 			}
 		})
 	}

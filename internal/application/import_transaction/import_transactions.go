@@ -12,22 +12,20 @@ import (
 )
 
 type ImportTransactionsUseCase interface {
-    Execute(ctx context.Context, r io.Reader) error
+	Execute(ctx context.Context, r io.Reader) error
 }
-
 
 type TransactionParser interface {
 	Parse(parser BankParser, csvReader *csv.Reader) ([]transaction.Transaction, error)
 }
 
 type ImportTransactions struct {
-	parser  TransactionParser
-	service *transaction.Service
+	parser    TransactionParser
+	service   *transaction.Service
 	publisher application.MessagingPublisher
 }
 
 type BankParser interface {
-
 	Supports() bool
 	GetColumnIndex(columnName string) (int, bool)
 }
@@ -38,8 +36,8 @@ func NewImportTransactions(
 	publisher application.MessagingPublisher,
 ) *ImportTransactions {
 	return &ImportTransactions{
-		parser:  parser,
-		service: service,
+		parser:    parser,
+		service:   service,
 		publisher: publisher,
 	}
 }
@@ -65,14 +63,14 @@ func (uc *ImportTransactions) Execute(
 		return err
 	}
 
-	bankParsers :=  []BankParser{
+	bankParsers := []BankParser{
 		nubankParser,
-	};
+	}
 
 	var rigthBankParser BankParser
 
 	for i := range bankParsers {
-		if bankParsers[i].Supports(){
+		if bankParsers[i].Supports() {
 			rigthBankParser = bankParsers[i]
 			break
 		}
@@ -86,7 +84,6 @@ func (uc *ImportTransactions) Execute(
 	if err != nil {
 		return err
 	}
-
 
 	savedTransaction, err := uc.service.ImportTransactions(ctx, transactions)
 	if err != nil {
@@ -102,18 +99,22 @@ func (uc *ImportTransactions) Execute(
 }
 
 func (uc *ImportTransactions) sendToMessaging(
-    ctx context.Context,
-    transactions []transaction.Transaction,
+	ctx context.Context,
+	transactions []transaction.Transaction,
 ) error {
-    for _, tx := range transactions {
-        if err := uc.publisher.Publish(ctx, tx); err != nil {
-            return fmt.Errorf(
-                "publishing classification request for transaction %s: %w",
-                tx.ID,
-                err,
-            )
-        }
-    }
+	if uc.publisher == nil {
+		return UninitializedPublisher
+	}
 
-    return nil
+	for _, tx := range transactions {
+		if err := uc.publisher.Publish(ctx, tx); err != nil {
+			return fmt.Errorf(
+				"publishing classification request for transaction %s: %w",
+				tx.ID,
+				err,
+			)
+		}
+	}
+
+	return nil
 }

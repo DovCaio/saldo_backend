@@ -13,33 +13,33 @@ import (
 )
 
 type TransactionRepository struct {
-    db *sql.DB
+	db *sql.DB
 }
 
 func NewTransactionRepository(db *sql.DB) *TransactionRepository {
-    return &TransactionRepository{
-        db: db,
-    }
+	return &TransactionRepository{
+		db: db,
+	}
 }
 
 var _ transaction.Repository = (*TransactionRepository)(nil)
 var _ application.ClassificationRepository = (*TransactionRepository)(nil)
 
 func (r *TransactionRepository) SaveBatch(
-    ctx context.Context,
-    transactions []transaction.Transaction,
+	ctx context.Context,
+	transactions []transaction.Transaction,
 ) ([]transaction.Transaction, error) {
-    if len(transactions) == 0 {
-        return nil, transaction.ErrEmptyImport
-    }
+	if len(transactions) == 0 {
+		return nil, transaction.ErrEmptyImport
+	}
 
-    tx, err := r.db.BeginTx(ctx, nil)
-    if err != nil {
-        return nil, fmt.Errorf("beginning transaction batch: %w", err)
-    }
-    defer tx.Rollback()
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("beginning transaction batch: %w", err)
+	}
+	defer tx.Rollback()
 
-    query := `
+	query := `
         INSERT INTO transactions (
             transaction_date,
             description,
@@ -57,46 +57,45 @@ func (r *TransactionRepository) SaveBatch(
             external_id
     `
 
-    saved := make([]transaction.Transaction, 0, len(transactions))
+	saved := make([]transaction.Transaction, 0, len(transactions))
 
-    for i, item := range transactions {
-        var t transaction.Transaction
+	for i, item := range transactions {
+		var t transaction.Transaction
 
-        err := tx.QueryRowContext(
-            ctx,
-            query,
-            item.Date.Format("2006-01-02"),
-            item.Description,
-            item.AmountCents,
-            string(item.Type),
-            item.ExternalID,
-        ).Scan(
-            &t.ID,
-            &t.Date,
-            &t.Description,
-            &t.AmountCents,
-            &t.Type,
-            &t.ExternalID,
-        )
+		err := tx.QueryRowContext(
+			ctx,
+			query,
+			item.Date.Format("2006-01-02"),
+			item.Description,
+			item.AmountCents,
+			string(item.Type),
+			item.ExternalID,
+		).Scan(
+			&t.ID,
+			&t.Date,
+			&t.Description,
+			&t.AmountCents,
+			&t.Type,
+			&t.ExternalID,
+		)
 
-        if err != nil {
-            return nil, fmt.Errorf(
-                "saving transaction %d: %w",
-                i+1,
-                err,
-            )
-        }
+		if err != nil {
+			return nil, fmt.Errorf(
+				"saving transaction %d: %w",
+				i+1,
+				err,
+			)
+		}
 
-        saved = append(saved, t)
-    }
+		saved = append(saved, t)
+	}
 
-    if err := tx.Commit(); err != nil {
-        return nil, fmt.Errorf("committing transaction batch: %w", err)
-    }
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("committing transaction batch: %w", err)
+	}
 
-    return saved ,nil
+	return saved, nil
 }
-
 
 func (r *TransactionRepository) FindAll(
 	ctx context.Context,
@@ -127,7 +126,9 @@ func (r *TransactionRepository) FindAll(
 			description,
 			amount_cents,
 			type,
-			COALESCE(external_id, '')
+			COALESCE(external_id, ''),
+			COALESCE(category, ''),
+			category_status
 		FROM transactions
 		WHERE 1 = 1
 	`
@@ -193,6 +194,7 @@ func (r *TransactionRepository) FindAll(
 	for rows.Next() {
 		var item transaction.Transaction
 		var txType string
+		var categoryStatus string
 
 		err := rows.Scan(
 			&item.ID,
@@ -201,12 +203,15 @@ func (r *TransactionRepository) FindAll(
 			&item.AmountCents,
 			&txType,
 			&item.ExternalID,
+			&item.Category,
+			&categoryStatus,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("scanning transaction: %w", err)
 		}
 
 		item.Type = transaction.TransactionType(txType)
+		item.CategoryStatus = transaction.CategoryStatus(categoryStatus)
 		transactions = append(transactions, item)
 	}
 
@@ -218,25 +223,25 @@ func (r *TransactionRepository) FindAll(
 }
 
 func (r *TransactionRepository) Summary(
-    ctx context.Context,
-    filter transaction.TransactionSummaryFilter,
+	ctx context.Context,
+	filter transaction.TransactionSummaryFilter,
 ) (*dto.SummaryResponse, error) {
-    groupBy := filter.GroupBy
+	groupBy := filter.GroupBy
 
-    if groupBy == "" {
-        groupBy = transaction.MONTH
-    }
+	if groupBy == "" {
+		groupBy = transaction.MONTH
+	}
 
-    switch groupBy {
-    case transaction.DAY, transaction.MONTH, transaction.YEAR:
-    default:
-        return nil, fmt.Errorf(
-            "invalid summary grouping: %q",
-            groupBy,
-        )
-    }
+	switch groupBy {
+	case transaction.DAY, transaction.MONTH, transaction.YEAR:
+	default:
+		return nil, fmt.Errorf(
+			"invalid summary grouping: %q",
+			groupBy,
+		)
+	}
 
-    query := `
+	query := `
         SELECT
             DATE_TRUNC($1, transaction_date)::date AS date,
             type,
@@ -244,152 +249,152 @@ func (r *TransactionRepository) Summary(
         FROM transactions
     `
 
-    args := []any{string(groupBy)}
-    conditions := make([]string, 0, 2)
+	args := []any{string(groupBy)}
+	conditions := make([]string, 0, 2)
 
-    if filter.DateFrom != nil {
-        args = append(args, *filter.DateFrom)
-        conditions = append(
-            conditions,
-            fmt.Sprintf("transaction_date >= $%d", len(args)),
-        )
-    }
+	if filter.DateFrom != nil {
+		args = append(args, *filter.DateFrom)
+		conditions = append(
+			conditions,
+			fmt.Sprintf("transaction_date >= $%d", len(args)),
+		)
+	}
 
-    if filter.DateTo != nil {
-        args = append(args, *filter.DateTo)
-        conditions = append(
-            conditions,
-            fmt.Sprintf("transaction_date <= $%d", len(args)),
-        )
-    }
+	if filter.DateTo != nil {
+		args = append(args, *filter.DateTo)
+		conditions = append(
+			conditions,
+			fmt.Sprintf("transaction_date <= $%d", len(args)),
+		)
+	}
 
-    if len(conditions) > 0 {
-        query += " WHERE " + strings.Join(conditions, " AND ")
-    }
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
 
-    query += `
+	query += `
         GROUP BY DATE_TRUNC($1, transaction_date)::date, type
         ORDER BY date, type
     `
 
-    rows, err := r.db.QueryContext(ctx, query, args...)
-    if err != nil {
-        return nil, fmt.Errorf("querying transaction summary: %w", err)
-    }
-    defer rows.Close()
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("querying transaction summary: %w", err)
+	}
+	defer rows.Close()
 
-    response := &dto.SummaryResponse{
-        Series: make([]dto.Serie, 0),
-    }
+	response := &dto.SummaryResponse{
+		Series: make([]dto.Serie, 0),
+	}
 
-    seriesIndex := make(map[string]int)
+	seriesIndex := make(map[string]int)
 
-    for rows.Next() {
-        var (
-            date  time.Time
-            typ   transaction.TransactionType
-            total int64
-        )
+	for rows.Next() {
+		var (
+			date  time.Time
+			typ   transaction.TransactionType
+			total int64
+		)
 
-        if err := rows.Scan(&date, &typ, &total); err != nil {
-            return nil, fmt.Errorf(
-                "scanning transaction summary: %w",
-                err,
-            )
-        }
+		if err := rows.Scan(&date, &typ, &total); err != nil {
+			return nil, fmt.Errorf(
+				"scanning transaction summary: %w",
+				err,
+			)
+		}
 
-        var dateKey string
+		var dateKey string
 
-        switch groupBy {
-        case transaction.DAY:
-            dateKey = date.Format("2006-01-02")
-        case transaction.MONTH:
-            dateKey = date.Format("2006-01")
-        case transaction.YEAR:
-            dateKey = date.Format("2006")
-        }
+		switch groupBy {
+		case transaction.DAY:
+			dateKey = date.Format("2006-01-02")
+		case transaction.MONTH:
+			dateKey = date.Format("2006-01")
+		case transaction.YEAR:
+			dateKey = date.Format("2006")
+		}
 
-        index, exists := seriesIndex[dateKey]
-        if !exists {
-            index = len(response.Series)
-            seriesIndex[dateKey] = index
+		index, exists := seriesIndex[dateKey]
+		if !exists {
+			index = len(response.Series)
+			seriesIndex[dateKey] = index
 
-            response.Series = append(response.Series, dto.Serie{
-                Date: dateKey,
-            })
-        }
+			response.Series = append(response.Series, dto.Serie{
+				Date: dateKey,
+			})
+		}
 
-        switch typ {
-        case transaction.Income:
-            response.TotalIncome += total
-            response.Series[index].Income += total
+		switch typ {
+		case transaction.Income:
+			response.TotalIncome += total
+			response.Series[index].Income += total
 
-        case transaction.Expense:
-            response.TotalExpense += total
-            response.Series[index].Expense += total
+		case transaction.Expense:
+			response.TotalExpense += total
+			response.Series[index].Expense += total
 
-        default:
-            return nil, fmt.Errorf(
-                "unexpected transaction type in summary: %q",
-                typ,
-            )
-        }
-    }
+		default:
+			return nil, fmt.Errorf(
+				"unexpected transaction type in summary: %q",
+				typ,
+			)
+		}
+	}
 
-    if err := rows.Err(); err != nil {
-        return nil, fmt.Errorf(
-            "iterating transaction summary: %w",
-            err,
-        )
-    }
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf(
+			"iterating transaction summary: %w",
+			err,
+		)
+	}
 
-    response.Balance = response.TotalIncome - response.TotalExpense
+	response.Balance = response.TotalIncome - response.TotalExpense
 
-    return response, nil
+	return response, nil
 }
 
 func (r *TransactionRepository) UpdateClassification(
-    ctx context.Context,
-    transactionID string,
-    category string,
-    confidence float64,
-    descriptionVersion int64,
+	ctx context.Context,
+	transactionID string,
+	category string,
+	confidence float64,
+	descriptionVersion int64,
 ) error {
-    query := `
+	query := `
         UPDATE transactions
         SET category = $1,
             category_status = $2
         WHERE id = $3
     `
 
-    result, err := r.db.ExecContext(
-        ctx,
-        query,
-        category,
-        "completed",
-        transactionID,
-    )
-    if err != nil {
-        return fmt.Errorf(
-            "updating transaction classification: %w",
-            err,
-        )
-    }
+	result, err := r.db.ExecContext(
+		ctx,
+		query,
+		category,
+		"completed",
+		transactionID,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"updating transaction classification: %w",
+			err,
+		)
+	}
 
-    rowsAffected, err := result.RowsAffected()
-    if err != nil {
-        return fmt.Errorf(
-            "getting affected rows: %w",
-            err,
-        )
-    }
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf(
+			"getting affected rows: %w",
+			err,
+		)
+	}
 
-    if rowsAffected == 0 {
-        return fmt.Errorf(
-            "transaction %s not found",
-            transactionID,
-        )
-    }  
+	if rowsAffected == 0 {
+		return fmt.Errorf(
+			"transaction %s not found",
+			transactionID,
+		)
+	}
 
-    return nil
+	return nil
 }

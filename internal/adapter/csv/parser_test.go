@@ -13,7 +13,7 @@ type bankParserMock struct {
 	columnIndices map[string]int
 }
 
-func (b *bankParserMock) Supports() bool{
+func (b *bankParserMock) Supports() bool {
 	return true
 }
 
@@ -24,98 +24,98 @@ func (b *bankParserMock) GetColumnIndex(columnName string) (int, bool) {
 
 func TestParseCSV(t *testing.T) {
 	tests := []struct {
-		name        string
-		input       string
-		wantCount   int
-		wantErr     bool
+		name          string
+		input         string
+		wantCount     int
+		wantErr       bool
 		columnIndices map[string]int
 	}{
-{
-    name: "parses valid transactions",
-    input: `01/10/2026,Salario,5000.00,INCOME,ext-001
+		{
+			name: "parses valid transactions",
+			input: `01/10/2026,Salario,5000.00,INCOME,ext-001
 02/10/2026,Mercado,150.50,EXPENSE,ext-002`,
-    wantCount: 2,
-	columnIndices: map[string]int{
-		"date":        0,
-		"description": 1,
-		"amount":      2,
-		"external_id": 3,
-	},
-},
-{
-    name: "",
-    input: `01/10/2026,Salario,5000.00,INCOME,ext-001
+			wantCount: 2,
+			columnIndices: map[string]int{
+				"date":        0,
+				"description": 1,
+				"amount":      2,
+				"external_id": 3,
+			},
+		},
+		{
+			name: "",
+			input: `01/10/2026,Salario,5000.00,INCOME,ext-001
 02/10/2026,Mercado,150.50,EXPENSE,ext-002`,
-    wantCount: 2,
-	columnIndices: map[string]int{
-		"date":        0,
-		"description": 1,
-		"amount":      2,
-		"external_id": 3,
-	},
-},
-{
-    name:    "rejects empty CSV",
-    input:   "",
-    wantErr: true,
-	columnIndices: map[string]int{
-		"date":        0,
-		"description": 1,
-		"amount":      2,
-		"external_id": 3,
-	},
-},
-{
-    name:    "rejects invalid header",
-    input:   `date,title,amount,type,external_id`,
-    wantErr: true,
-	columnIndices: map[string]int{
-		"date":        0,
-		"description": 1,
-		"amount":      2,
-		"external_id": 3,
-	},
-},
-{
-    name: "rejects invalid date",
-    input: `2026-10-01,Salario,5000.00,INCOME,ext-001`,
-    wantErr: true,
-	columnIndices: map[string]int{
-		"date":        0,
-		"description": 1,
-		"amount":      2,
-		"external_id": 3,
-	},
-},
-{
-    name: "rejects invalid amount",
-    input: `01/10/2026,Salario,abc,INCOME,ext-001`,
-    wantErr: true,
-	columnIndices: map[string]int{
-		"date":        0,
-		"description": 1,
-		"amount":      2,
-		"external_id": 3,
-	},
-},
-{
-    name: "rejects incomplete row",
-    input: `01/10/2026,Salario,5000.00,INCOME`,
-    wantErr: true,
-	columnIndices: map[string]int{
-		"date":        0,
-		"description": 1,
-		"amount":      2,
-	},
-},
-			}
+			wantCount: 2,
+			columnIndices: map[string]int{
+				"date":        0,
+				"description": 1,
+				"amount":      2,
+				"external_id": 3,
+			},
+		},
+		{
+			name:    "rejects empty CSV",
+			input:   "",
+			wantErr: true,
+			columnIndices: map[string]int{
+				"date":        0,
+				"description": 1,
+				"amount":      2,
+				"external_id": 3,
+			},
+		},
+		{
+			name:    "rejects invalid header",
+			input:   `date,title,amount,type,external_id`,
+			wantErr: true,
+			columnIndices: map[string]int{
+				"date":        0,
+				"description": 1,
+				"amount":      2,
+				"external_id": 3,
+			},
+		},
+		{
+			name:    "rejects invalid date",
+			input:   `2026-10-01,Salario,5000.00,INCOME,ext-001`,
+			wantErr: true,
+			columnIndices: map[string]int{
+				"date":        0,
+				"description": 1,
+				"amount":      2,
+				"external_id": 3,
+			},
+		},
+		{
+			name:    "rejects invalid amount",
+			input:   `01/10/2026,Salario,abc,INCOME,ext-001`,
+			wantErr: true,
+			columnIndices: map[string]int{
+				"date":        0,
+				"description": 1,
+				"amount":      2,
+				"external_id": 3,
+			},
+		},
+		{
+			name:    "rejects incomplete row",
+			input:   `01/10/2026,Salario,5000.00,INCOME`,
+			wantErr: true,
+			columnIndices: map[string]int{
+				"date":        0,
+				"description": 1,
+				"amount":      2,
+			},
+		},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			csvReader := csv.NewReader(strings.NewReader(tt.input))
-				bankParserMock := &bankParserMock{
-		columnIndices: tt.columnIndices,
-	}
+			bankParserMock := &bankParserMock{
+				columnIndices: tt.columnIndices,
+			}
 			got, err := ParseCSV(bankParserMock, csvReader)
 
 			if (err != nil) != tt.wantErr {
@@ -145,7 +145,7 @@ func TestParseCSVTransactionFields(t *testing.T) {
 			"external_id": 3,
 		},
 	}
-	got, err := ParseCSV(bankParserMock, csvReader) 
+	got, err := ParseCSV(bankParserMock, csvReader)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -173,7 +173,98 @@ func TestParseCSVTransactionFields(t *testing.T) {
 	}
 }
 
+func TestParserParseDelegatesToParseCSV(t *testing.T) {
+	input := `01/10/2026,Salario,5000.00,ext-001`
+	csvReader := csv.NewReader(strings.NewReader(input))
+	bankParserMock := &bankParserMock{
+		columnIndices: map[string]int{
+			"date":        0,
+			"description": 1,
+			"amount":      2,
+			"external_id": 3,
+		},
+	}
 
+	got, err := NewParser().Parse(bankParserMock, csvReader)
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d transactions, want 1", len(got))
+	}
+}
+
+func TestParseCSVMissingColumns(t *testing.T) {
+	input := `01/10/2026,Salario,5000.00,ext-001`
+
+	tests := []struct {
+		name          string
+		columnIndices map[string]int
+	}{
+		{name: "missing date", columnIndices: map[string]int{"amount": 2, "description": 1, "external_id": 3}},
+		{name: "missing amount", columnIndices: map[string]int{"date": 0, "description": 1, "external_id": 3}},
+		{name: "missing description", columnIndices: map[string]int{"date": 0, "amount": 2, "external_id": 3}},
+		{name: "missing external_id", columnIndices: map[string]int{"date": 0, "description": 1, "amount": 2}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			csvReader := csv.NewReader(strings.NewReader(input))
+			_, err := ParseCSV(&bankParserMock{columnIndices: tt.columnIndices}, csvReader)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+		})
+	}
+}
+
+func TestParseCSVExpenseFromNegativeAmount(t *testing.T) {
+	input := `01/10/2026,Mercado,-150.50,ext-002`
+	csvReader := csv.NewReader(strings.NewReader(input))
+	got, err := ParseCSV(&bankParserMock{columnIndices: map[string]int{
+		"date":        0,
+		"description": 1,
+		"amount":      2,
+		"external_id": 3,
+	}}, csvReader)
+	if err != nil {
+		t.Fatalf("ParseCSV() error = %v", err)
+	}
+	if got[0].Type != transaction.Expense {
+		t.Errorf("type = %q, want EXPENSE", got[0].Type)
+	}
+	if got[0].AmountCents != 15050 {
+		t.Errorf("amount = %d, want 15050", got[0].AmountCents)
+	}
+}
+
+func TestParseCSVInvalidTransaction(t *testing.T) {
+	input := `01/10/2026,   ,5000.00,ext-001`
+	csvReader := csv.NewReader(strings.NewReader(input))
+	_, err := ParseCSV(&bankParserMock{columnIndices: map[string]int{
+		"date":        0,
+		"description": 1,
+		"amount":      2,
+		"external_id": 3,
+	}}, csvReader)
+	if err == nil {
+		t.Fatal("expected invalid transaction error")
+	}
+}
+
+func TestParseCSVMalformedRecord(t *testing.T) {
+	input := `"unterminated`
+	csvReader := csv.NewReader(strings.NewReader(input))
+	_, err := ParseCSV(&bankParserMock{columnIndices: map[string]int{
+		"date":        0,
+		"description": 1,
+		"amount":      2,
+		"external_id": 3,
+	}}, csvReader)
+	if err == nil {
+		t.Fatal("expected CSV read error")
+	}
+}
 
 func TestParseAmountCents(t *testing.T) {
 	tests := []struct {
@@ -191,6 +282,11 @@ func TestParseAmountCents(t *testing.T) {
 		{"", 0, true},
 		{"-10.00", 1000, false},
 		{"1,50", 0, true},
+		{".50", 0, true},
+		{"10.", 0, true},
+		{"92233720368547759.00", 0, true},
+		{"1.a", 0, true},
+		{"--10.00", 0, true},
 	}
 
 	for _, tt := range tests {

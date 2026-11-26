@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -22,19 +23,17 @@ func (m *transactionSummaryMock) ImportTransactions(ctx context.Context, transac
 	return nil, nil
 }
 
-
 func (m *transactionSummaryMock) FindAll(
 	ctx context.Context,
 	filter transaction.TransactionFilter,
 ) ([]dto.TransactionResponse, error) {
-
 	return nil, nil
 }
 
 func (m *transactionSummaryMock) Summary(
 	ctx context.Context,
-	filter transaction.TransactionSummaryFilter) (*dto.SummaryResponse, error) {
-
+	filter transaction.TransactionSummaryFilter,
+) (*dto.SummaryResponse, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -87,5 +86,19 @@ func TestSucessfulSummary(t *testing.T) {
 
 	if !reflect.DeepEqual(expectedSummary, result) {
 		t.Errorf("expected %#v, got %#v", expectedSummary, result)
+	}
+}
+
+func TestSummaryPropagatesError(t *testing.T) {
+	expected := errors.New("database unavailable")
+	mock := &transactionSummaryMock{err: expected}
+	useCase := NewSummaryTransactions(mock)
+
+	got, err := useCase.Execute(context.Background(), transaction.TransactionSummaryFilter{})
+	if !errors.Is(err, expected) {
+		t.Fatalf("error = %v, want %v", err, expected)
+	}
+	if got != nil {
+		t.Errorf("result = %#v, want nil", got)
 	}
 }

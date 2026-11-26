@@ -13,18 +13,16 @@ import (
 	"github.com/DovCaio/saldo/internal/transaction"
 )
 
-type summaryUseCaseMock struct{
-
+type summaryUseCaseMock struct {
 	result dto.SummaryResponse
-	err error
+	err    error
 	called bool
 	filter transaction.TransactionSummaryFilter
-
 }
 
 func (s *summaryUseCaseMock) Execute(
 	ctx context.Context, filter transaction.TransactionSummaryFilter,
-) (*dto.SummaryResponse, error){
+) (*dto.SummaryResponse, error) {
 
 	s.called = true
 	if s.err != nil {
@@ -35,11 +33,11 @@ func (s *summaryUseCaseMock) Execute(
 
 }
 
-func TestExecuteSucessfulWithoutFilter(t *testing.T){
+func TestExecuteSucessfulWithoutFilter(t *testing.T) {
 	expected := dto.SummaryResponse{
-		TotalIncome: 1000,
+		TotalIncome:  1000,
 		TotalExpense: 800,
-		Balance: 200,
+		Balance:      200,
 		Series: []dto.Serie{
 			{Date: "2099-12-20", Income: 1000, Expense: 800},
 		},
@@ -54,11 +52,10 @@ func TestExecuteSucessfulWithoutFilter(t *testing.T){
 	req := httptest.NewRequest(http.MethodGet, "/transactions/summary", nil)
 	rec := httptest.NewRecorder()
 
-	handler.ServeHTTP(rec, req )
-
+	handler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code )
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 
 	if !mock.called {
@@ -73,8 +70,8 @@ func TestExecuteSucessfulWithoutFilter(t *testing.T){
 		t.Error("dateTo must not exists")
 	}
 
-		var got dto.SummaryResponse
-	if err := json.NewDecoder(rec.Body).Decode(&got) ; err != nil {
+	var got dto.SummaryResponse
+	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
 		t.Fatalf("error deconding the rec value: %v", err)
 	}
 
@@ -82,14 +79,13 @@ func TestExecuteSucessfulWithoutFilter(t *testing.T){
 		t.Errorf("expected: %v actual: %v", expected, got)
 	}
 
-
 }
 
-func TestExecuteSucessfulWithFilter(t *testing.T){
+func TestExecuteSucessfulWithFilter(t *testing.T) {
 	expected := dto.SummaryResponse{
-		TotalIncome: 1000,
+		TotalIncome:  1000,
 		TotalExpense: 800,
-		Balance: 200,
+		Balance:      200,
 		Series: []dto.Serie{
 			{Date: "2099-12-20", Income: 1000, Expense: 800},
 		},
@@ -104,11 +100,10 @@ func TestExecuteSucessfulWithFilter(t *testing.T){
 	req := httptest.NewRequest(http.MethodGet, "/transactions/summary?date_from=2099-12-01&date_to=2099-12-30&group_by=DAY", nil)
 	rec := httptest.NewRecorder()
 
-	handler.ServeHTTP(rec, req )
-
+	handler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code )
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 
 	if !mock.called {
@@ -125,14 +120,13 @@ func TestExecuteSucessfulWithFilter(t *testing.T){
 
 	var got dto.SummaryResponse
 
-	if err := json.NewDecoder(rec.Body).Decode(&got) ; err != nil {
+	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
 		t.Fatalf("error deconding the rec value: %v", err)
 	}
 
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("expected: %v actual: %v", expected, got)
 	}
-
 
 }
 
@@ -295,6 +289,26 @@ func TestExecuteWithUseCaseError(t *testing.T) {
 
 	if !mock.called {
 		t.Error("use case was not called")
+	}
+}
+
+func TestExecuteWithInvertedDateRange(t *testing.T) {
+	mock := &summaryUseCaseMock{}
+	handler := NewSummaryTransactionHandler(mock)
+
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/transactions/summary?date_from=2099-12-30&date_to=2099-12-01",
+		nil,
+	)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+	if mock.called {
+		t.Error("use case should not be called")
 	}
 }
 

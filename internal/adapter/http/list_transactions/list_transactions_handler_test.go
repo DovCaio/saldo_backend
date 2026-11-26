@@ -59,8 +59,6 @@ func TestListTransactionsHandler_Success(t *testing.T) {
 		t.Errorf("expected application/json, got %q", contentType)
 	}
 
-	
-
 	var got []dto.TransactionResponse
 	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
 		t.Fatalf("decoding response: %v", err)
@@ -216,6 +214,57 @@ func TestListTransactionsHandler_UseCaseError(t *testing.T) {
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, rec.Code)
+	}
+}
+
+func TestListTransactionsHandler_InvalidQueryParams(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+	}{
+		{name: "invalid date_from", query: "?date_from=10-01-2026"},
+		{name: "invalid date_to", query: "?date_to=not-a-date"},
+		{name: "invalid max_amount", query: "?max_amount=abc"},
+		{name: "negative min_amount", query: "?min_amount=-1"},
+		{name: "negative max_amount", query: "?max_amount=-10"},
+		{name: "invalid limit", query: "?limit=abc"},
+		{name: "zero limit", query: "?limit=0"},
+		{name: "invalid offset", query: "?offset=abc"},
+		{name: "negative offset", query: "?offset=-1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &listTransactionsUseCaseMock{}
+			handler := NewListTransactionsHandler(mock)
+
+			req := httptest.NewRequest(http.MethodGet, "/transactions"+tt.query, nil)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusBadRequest {
+				t.Errorf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+			}
+			if mock.called {
+				t.Error("use case should not be called")
+			}
+		})
+	}
+}
+
+func TestListTransactionsHandler_ParsesIncomeType(t *testing.T) {
+	mock := &listTransactionsUseCaseMock{}
+	handler := NewListTransactionsHandler(mock)
+
+	req := httptest.NewRequest(http.MethodGet, "/transactions?type=INCOME", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if mock.gotFilter.Type == nil || *mock.gotFilter.Type != transaction.Income {
+		t.Errorf("type = %v, want INCOME", mock.gotFilter.Type)
 	}
 }
 
